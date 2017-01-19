@@ -219,7 +219,7 @@ void setup() {
   f1.begin(0, 0, 5); f1.SetDriverLcd(&lcd);
   f2.begin(1, 0, 5); f2.SetDriverLcd(&lcd);
   f3.begin(0, 8, 12); f3.SetDriverBig(&bigCrystal);
-  lcd.begin(20, 2);
+  lcd.begin(16, 2);
   lcd.clear();
 }
 
