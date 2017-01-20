@@ -1,11 +1,16 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 #include <BigCrystal.h>
-#include <LiquidCrystal.h>
+
+//#include <LiquidCrystal_PCF8574.h>
 
 #include "SmartDelay.h"
 #include "SmartButton.h"
 
 // Set up according to your LCD pins
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+//LiquidCrystal_PCF8574 lcd(0x27);
+//LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 BigCrystal bigCrystal(&lcd);
 
 ///////
@@ -34,7 +39,7 @@ class DisplayField {
     byte size = SingleLine;
     enum ShowMode md = Show;
     enum BlinkState st = BlinkShow;
-    LiquidCrystal *lc;
+    //LCD *lc;
     BigCrystal *bc;
     SmartDelay d;
   public:
@@ -87,6 +92,8 @@ class DisplayField {
         }
       }
     }
+
+#define lc bc
 
     void Display(enum DisplayMode mode) {
       switch (mode) {
@@ -144,10 +151,9 @@ class DisplayField {
       size = DoubleLine;
 
     }
-    void SetDriverLcd(LiquidCrystal*ptr) {
-      lc = ptr;
+    void SetDriverLcd(BigCrystal *ptr) {
+      bc = ptr;
       size = SingleLine;
-
     }
     enum ShowMode GetMode() {
       return md;
@@ -186,7 +192,7 @@ class _time : public DisplayField {
   public:
     virtual char *GetData() {
       static char b[7];
-      snprintf(b, 6, "%02d:%02d", (int)((millis() / 60000L)%60), (int)((millis() / 1000L) % 60));
+      snprintf(b, 6, "%02d:%02d", (int)((millis() / 60000L) % 60), (int)((millis() / 1000L) % 60));
       return b;
     }
 };
@@ -216,10 +222,10 @@ SmartDelay a1(200000UL);
 DisplayField *z[] = {&f1, &f2, &f3};
 
 void setup() {
-  f1.begin(0, 0, 5); f1.SetDriverLcd(&lcd);
-  f2.begin(1, 0, 5); f2.SetDriverLcd(&lcd);
+  f1.begin(0, 0, 5); f1.SetDriverLcd(&bigCrystal);//&lcd);
+  f2.begin(1, 0, 5); f2.SetDriverLcd(&bigCrystal);//&lcd);
   f3.begin(0, 8, 12); f3.SetDriverBig(&bigCrystal);
-  lcd.begin(16, 2);
+  lcd.begin(20, 4);
   lcd.clear();
 }
 
@@ -227,6 +233,7 @@ int s = 0;
 SmartDelay sd(247000UL);
 
 byte flag;
+byte flag2;
 
 void loop() {
   // Рисуем
@@ -239,14 +246,21 @@ void loop() {
     f1.Set(odo);
     f1.Redraw(); // Перерисовываем сразу, не раз в секунду, как остальное всё.
     // Мигаем часами или не мигаем?
-    if (odo > 2000 && flag) {
+    if (odo > 3000 && flag) {
       flag = 0;
       f2.SetMode(DisplayField::BlinkB);
-      f3.SetMode(DisplayField::BlinkW);
+      //f3.SetMode(DisplayField::BlinkW);
     } else {
       flag = 1;
       f2.SetMode(DisplayField::Show);
-      f3.SetMode(DisplayField::Show);
+      //f3.SetMode(DisplayField::Show);
+    }
+    if (odo < 1500 && flag2) {
+      flag2 = 0;
+      f1.SetMode(DisplayField::BlinkW);
+    } else {
+      flag2 = 1;
+      f1.SetMode(DisplayField::Show);
     }
   }
   // Крутим большие цифры
